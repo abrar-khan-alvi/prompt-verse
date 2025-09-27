@@ -2,9 +2,9 @@
 
 A fully decentralized marketplace for tokenizing, verifying, and trading unique AI-generated prompts as NFTs. This platform is built on a private Besu blockchain, ensuring secure ownership and monetization of intellectual property.
 
-![Project Screenshot Placeholder](https://via.placeholder.com/800x450.png?text=AI+Prompt+NFT+Marketplace)
-*(Replace this with a screenshot of your application's Hero section)*
-
+![Project Screenshot Placeholder](https://github.com/abrar-khan-alvi/prompt-verse/blob/main/Screenshot%20(76).png)
+![Project Screenshot Placeholder](https://github.com/abrar-khan-alvi/prompt-verse/blob/main/Screenshot%20(78).png)
+![Project Screenshot Placeholder](https://github.com/abrar-khan-alvi/prompt-verse/blob/main/Screenshot%20(79).png)
 ---
 
 ## ✨ Key Features
