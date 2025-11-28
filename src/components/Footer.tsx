@@ -1,105 +1,95 @@
-"use client";
-import Link from "next/link";
+'use client';
+import Link from 'next/link';
+import { Github, Twitter, Disc, ArrowUpRight } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="bg-card border-t border-border py-12 px-4">
-      <div className="container mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="col-span-1 md:col-span-1">
-            <h3 className="text-xl font-bold gradient-text mb-4">PromptVerse</h3>
-            <p className="text-gray-400 mb-4">
-              The decentralized marketplace for AI-generated prompts, empowering creators to tokenize and trade their intellectual property.
-            </p>
-            <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd"></path>
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
-                </svg>
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd"></path>
-                </svg>
-              </a>
+    <footer className="relative mt-32 overflow-hidden border-t border-white/5 bg-black/40 backdrop-blur-xl">
+      {/* Creative Background Elements */}
+      <div className="absolute -top-[300px] left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-purple-600/20 blur-[120px]" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
+
+      {/* Large Watermark Text */}
+      <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 select-none text-[12vw] font-bold leading-none text-white/[0.02]">
+        PROMPTVERSE
+      </div>
+
+      <div className="container relative mx-auto px-4 py-16">
+        <div className="grid gap-12 md:grid-cols-12">
+          {/* Brand Column */}
+          <div className="flex flex-col justify-between md:col-span-5">
+            <div className="space-y-4">
+              <h3 className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-3xl font-bold text-transparent">
+                PromptVerse.
+              </h3>
+              <p className="max-w-sm text-base text-muted-foreground/80">
+                The next generation marketplace for AI prompts.
+                Tokenize your imagination and trade the future.
+              </p>
+            </div>
+
+            <div className="mt-8 flex gap-4 md:mt-0">
+              <SocialLink icon={<Twitter size={20} />} href="#" />
+              <SocialLink icon={<Github size={20} />} href="#" />
+              <SocialLink icon={<Disc size={20} />} href="#" />
             </div>
           </div>
-          
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Platform</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/marketplace" className="text-gray-400 hover:text-white transition-colors">
-                  Marketplace
-                </Link>
-              </li>
-              <li>
-                <Link href="/create" className="text-gray-400 hover:text-white transition-colors">
-                  Create Prompt
-                </Link>
-              </li>
-              <li>
-                <Link href="/profile" className="text-gray-400 hover:text-white transition-colors">
-                  My Profile
-                </Link>
-              </li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Resources</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  Smart Contracts
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  Developer API
-                </a>
-              </li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Company</h4>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  About
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  Terms of Service
-                </a>
-              </li>
-            </ul>
+
+          {/* Links Column */}
+          <div className="flex flex-col justify-end gap-8 md:col-span-7 md:flex-row md:gap-16">
+            <div className="flex flex-col gap-4">
+              <h4 className="font-mono text-sm text-purple-400">EXPLORE</h4>
+              <FooterLink href="/marketplace">Marketplace</FooterLink>
+              <FooterLink href="/leaderboard">Leaderboard</FooterLink>
+              <FooterLink href="/create">Create</FooterLink>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <h4 className="font-mono text-sm text-blue-400">ACCOUNT</h4>
+              <FooterLink href="/profile">Profile</FooterLink>
+              <FooterLink href="/profile?tab=favorites">Favorites</FooterLink>
+              <FooterLink href="/profile?tab=following">Following</FooterLink>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <h4 className="font-mono text-sm text-green-400">LEGAL</h4>
+              <FooterLink href="#">Privacy</FooterLink>
+              <FooterLink href="#">Terms</FooterLink>
+              <FooterLink href="#">License</FooterLink>
+            </div>
           </div>
         </div>
-        
-        <div className="mt-8 pt-8 border-t border-border text-center text-gray-400 text-sm">
-          <p>© 2025 PromptVerse. All rights reserved.</p>
+
+        {/* Bottom Bar */}
+        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 text-xs text-muted-foreground md:flex-row">
+          <p>© {new Date().getFullYear()} PromptVerse Inc.</p>
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span>All Systems Operational</span>
+          </div>
         </div>
       </div>
     </footer>
   );
 };
+
+const SocialLink = ({ icon, href }: { icon: React.ReactNode; href: string }) => (
+  <a
+    href={href}
+    className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 transition-all hover:border-purple-500/50 hover:bg-purple-500/10 hover:text-purple-400"
+  >
+    {icon}
+  </a>
+);
+
+const FooterLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  <Link
+    href={href}
+    className="group flex items-center gap-1 text-muted-foreground transition-colors hover:text-white"
+  >
+    <span>{children}</span>
+    <ArrowUpRight size={12} className="opacity-0 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100" />
+  </Link>
+);
 
 export default Footer;

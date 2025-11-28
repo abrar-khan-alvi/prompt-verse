@@ -1,15 +1,18 @@
 // src/app/layout.tsx
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import { Toaster } from '@/components/ui/toaster';
+import { FavoritesProvider } from '@/contexts/FavoritesContext';
+import { FollowingProvider } from '@/contexts/FollowingContext';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "PromptVerse",
-  description: "Trade and own AI Prompts securely.",
+  title: 'PromptVerse',
+  description: 'Trade and own AI Prompts securely.',
 };
 
 export default function RootLayout({
@@ -18,13 +21,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} flex flex-col min-h-screen bg-background text-foreground`}>
-        <Navbar />
-        <main className="flex-grow container mx-auto px-4 pt-20 sm:pt-24 pb-8">
-          {children}
-        </main>
-        <Footer />
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body
+        className={`${inter.className} flex min-h-screen flex-col bg-background text-foreground`}
+      >
+        <FavoritesProvider>
+          <FollowingProvider>
+            <Navbar />
+            <main className="container mx-auto flex-grow px-4 pb-8 pt-20 sm:pt-24">{children}</main>
+            <Footer />
+            <Toaster />
+          </FollowingProvider>
+        </FavoritesProvider>
       </body>
     </html>
   );

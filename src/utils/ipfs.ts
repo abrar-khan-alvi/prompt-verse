@@ -1,85 +1,142 @@
+/**
+ * IPFS utility functions for resolving and handling IPFS URIs
+ */
 
-// This file handles interactions with IPFS for storing prompt media files
+import { env } from '@/lib/env';
 
-// For a real implementation, you'd use the ipfs-http-client package
-// import { create } from 'ipfs-http-client';
+/**
+ * Resolves an IPFS URI to an HTTP gateway URL
+ * @param ipfsUri - The IPFS URI (e.g., "ipfs://Qm...")
+ * @param gateway - Optional custom gateway URL (defaults to Pinata gateway from env)
+ * @returns HTTP URL to access the IPFS content, or null if invalid
+ *
+ * @example
+ * resolveIpfsUrl("ipfs://QmX...") // "https://gateway.pinata.cloud/ipfs/QmX..."
+ * resolveIpfsUrl("https://example.com/image.png") // "https://example.com/image.png"
+ * resolveIpfsUrl("invalid") // null
+ */
+export function resolveIpfsUrl(
+  ipfsUri: string | null | undefined,
+  gateway?: string
+): string | null {
+  // Handle null/undefined
+  if (!ipfsUri || typeof ipfsUri !== 'string') {
+    return null;
+  }
 
-// Mock IPFS gateway URL (in a real app, you'd use a real IPFS gateway or node)
-const IPFS_GATEWAY = 'https://ipfs.io/ipfs/';
+  // If already HTTP/HTTPS, return as-is
+  if (ipfsUri.startsWith('http://') || ipfsUri.startsWith('https://')) {
+    return ipfsUri;
+  }
 
-// Mock function to upload a file to IPFS
-export const uploadFileToIPFS = async (file: File): Promise<string> => {
-  // This is a mock implementation
-  // In a real app, you would:
-  // 1. Create an IPFS client
-  // 2. Upload the file
-  // 3. Return the CID
-  
-  console.log(`Uploading file to IPFS: ${file.name}`);
-  
-  // Simulate upload delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Generate a random CID (in a real app, this would be returned from IPFS)
-  const fakeCid = `Qm${Array.from({length: 44}, () => 
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[
-      Math.floor(Math.random() * 62)
-    ]
-  ).join('')}`;
-  
-  return fakeCid;
-};
+  // Handle IPFS URIs
+  if (ipfsUri.startsWith('ipfs://')) {
+    const cid = ipfsUri.substring(7); // Remove "ipfs://" prefix
+    const gatewayUrl = gateway || env.PINATA_GATEWAY;
 
-// Upload multiple files to IPFS
-export const uploadFilesToIPFS = async (files: File[]): Promise<string[]> => {
-  const cidPromises = files.map(file => uploadFileToIPFS(file));
-  return Promise.all(cidPromises);
-};
+    if (!gatewayUrl) {
+      console.warn('IPFS gateway URL not configured');
+      return null;
+    }
 
-// Upload JSON metadata to IPFS
-export const uploadJSONToIPFS = async (metadata: any): Promise<string> => {
-  console.log(`Uploading JSON metadata to IPFS:`, metadata);
-  
-  // Simulate upload delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  // Generate a random CID (in a real app, this would be returned from IPFS)
-  const fakeCid = `Qm${Array.from({length: 44}, () => 
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'[
-      Math.floor(Math.random() * 62)
-    ]
-  ).join('')}`;
-  
-  return fakeCid;
-};
+    // Ensure gateway URL ends with /ipfs/ or just /
+    const normalizedGateway = gatewayUrl.endsWith('/') ? gatewayUrl : `${gatewayUrl}/`;
 
-// Get IPFS URL from CID
-export const getIPFSUrl = (cid: string): string => {
-  return `${IPFS_GATEWAY}${cid}`;
-};
+    return `${normalizedGateway}${cid}`;
+  }
 
-// Format metadata for NFT
-export const formatNFTMetadata = (
-  title: string, 
-  description: string, 
-  promptText: string, 
-  mediaCids: string[] = [],
-  creator: string
-) => {
-  return {
-    title,
-    description,
-    promptText,
-    media: mediaCids.map(cid => getIPFSUrl(cid)),
-    creator,
-    createdAt: new Date().toISOString()
-  };
-};
+  // Invalid format
+  return null;
+}
 
-export default {
-  uploadFileToIPFS,
-  uploadFilesToIPFS,
-  uploadJSONToIPFS,
-  getIPFSUrl,
-  formatNFTMetadata
-};
+/**
+ * Resolves multiple IPFS URIs to HTTP gateway URLs
+ * @param ipfsUris - Array of IPFS URIs
+ * @param gateway - Optional custom gateway URL
+ * @returns Array of HTTP URLs (null entries for invalid URIs)
+ */
+export function resolveIpfsUrls(
+  ipfsUris: (string | null | undefined)[],
+  gateway?: string
+): (string | null)[] {
+  return ipfsUris.map((uri) => resolveIpfsUrl(uri, gateway));
+}
+
+/**
+ * Converts an HTTP gateway URL back to an IPFS URI
+ * @param httpUrl - HTTP URL from an IPFS gateway
+ * @returns IPFS URI or null if not a valid gateway URL
+ *
+ * @example
+ * httpUrlToIpfsUri("https://gateway.pinata.cloud/ipfs/QmX...") // "ipfs://QmX..."
+ */
+export function httpUrlToIpfsUri(httpUrl: string | null | undefined): string | null {
+  if (!httpUrl || typeof httpUrl !== 'string') {
+    return null;
+  }
+
+  // Match common IPFS gateway patterns
+  const ipfsPattern = /\/ipfs\/([a-zA-Z0-9]+)/;
+  const match = httpUrl.match(ipfsPattern);
+
+  if (match && match[1]) {
+    return `ipfs://${match[1]}`;
+  }
+
+  return null;
+}
+
+/**
+ * Validates if a string is a valid IPFS CID (Content Identifier)
+ * This is a basic validation - for production, consider using a proper CID library
+ * @param cid - The CID to validate
+ * @returns true if the CID appears valid
+ */
+export function isValidCid(cid: string | null | undefined): boolean {
+  if (!cid || typeof cid !== 'string') {
+    return false;
+  }
+
+  // Basic CID validation (CIDv0 starts with Qm, CIDv1 is base32/base58)
+  // This is simplified - real validation would be more complex
+  return /^Qm[a-zA-Z0-9]{44}$/.test(cid) || /^[a-z2-7]{59}$/.test(cid);
+}
+
+/**
+ * Fetches and parses JSON metadata from IPFS
+ * @param ipfsUri - IPFS URI or HTTP URL
+ * @param options - Fetch options
+ * @returns Parsed JSON data or null on error
+ */
+export async function fetchIpfsJson<T = any>(
+  ipfsUri: string,
+  options?: RequestInit
+): Promise<T | null> {
+  try {
+    const httpUrl = resolveIpfsUrl(ipfsUri);
+
+    if (!httpUrl) {
+      console.error('Invalid IPFS URI:', ipfsUri);
+      return null;
+    }
+
+    const response = await fetch(httpUrl, {
+      ...options,
+      headers: {
+        Accept: 'application/json',
+        ...options?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch IPFS content: ${response.status} ${response.statusText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data as T;
+  } catch (error) {
+    console.error('Error fetching IPFS JSON:', error);
+    return null;
+  }
+}

@@ -1,4 +1,3 @@
-
 // Type definitions for Ethereum window object
 declare global {
   interface Window {
@@ -16,14 +15,14 @@ declare global {
 // Connect to MetaMask wallet
 export const connectWallet = async () => {
   if (!window.ethereum) {
-    throw new Error("No Ethereum wallet found. Please install MetaMask.");
+    throw new Error('No Ethereum wallet found. Please install MetaMask.');
   }
 
   try {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     return accounts[0];
   } catch (error) {
-    console.error("Failed to connect wallet:", error);
+    console.error('Failed to connect wallet:', error);
     throw error;
   }
 };
@@ -38,7 +37,7 @@ export const getCurrentAccount = async () => {
     const accounts = await window.ethereum.request({ method: 'eth_accounts' });
     return accounts.length > 0 ? accounts[0] : null;
   } catch (error) {
-    console.error("Error getting current account:", error);
+    console.error('Error getting current account:', error);
     return null;
   }
 };
@@ -53,7 +52,7 @@ export const getNetworkId = async () => {
     const chainId = await window.ethereum.request({ method: 'eth_chainId' });
     return parseInt(chainId, 16).toString();
   } catch (error) {
-    console.error("Error getting network ID:", error);
+    console.error('Error getting network ID:', error);
     return null;
   }
 };
@@ -67,7 +66,7 @@ export const checkNetwork = async (requiredNetworkId: string = '1') => {
 // Switch to a specific network
 export const switchNetwork = async (networkId: string) => {
   if (!window.ethereum) {
-    throw new Error("No Ethereum wallet found. Please install MetaMask.");
+    throw new Error('No Ethereum wallet found. Please install MetaMask.');
   }
 
   try {
@@ -80,7 +79,7 @@ export const switchNetwork = async (networkId: string) => {
     // This error code indicates that the chain has not been added to MetaMask
     if (error.code === 4902) {
       // For simplicity, we're not implementing network addition here
-      throw new Error("Network not available in your MetaMask, please add it manually.");
+      throw new Error('Network not available in your MetaMask, please add it manually.');
     }
     throw error;
   }
@@ -100,9 +99,9 @@ export const formatAddress = (address: string) => {
 // Listen for account changes
 export const listenForAccountChanges = (callback: (accounts: string[]) => void) => {
   if (!window.ethereum) return;
-  
+
   window.ethereum.on('accountsChanged', callback);
-  
+
   // Return cleanup function
   return () => {
     window.ethereum?.removeListener('accountsChanged', callback);
@@ -112,14 +111,14 @@ export const listenForAccountChanges = (callback: (accounts: string[]) => void) 
 // Listen for network changes
 export const listenForNetworkChanges = (callback: (networkId: string) => void) => {
   if (!window.ethereum) return;
-  
+
   const handleChainChanged = (chainId: string) => {
     const networkId = parseInt(chainId, 16).toString();
     callback(networkId);
   };
-  
+
   window.ethereum.on('chainChanged', handleChainChanged);
-  
+
   // Return cleanup function
   return () => {
     window.ethereum?.removeListener('chainChanged', handleChainChanged);
@@ -134,13 +133,13 @@ export const isMetaMaskInstalled = () => {
 // Sign a message with the connected wallet (for authentication)
 export const signMessage = async (message: string): Promise<string> => {
   if (!window.ethereum) {
-    throw new Error("No Ethereum wallet found. Please install MetaMask.");
+    throw new Error('No Ethereum wallet found. Please install MetaMask.');
   }
 
   try {
     const accounts = await window.ethereum.request({ method: 'eth_accounts' });
     if (accounts.length === 0) {
-      throw new Error("No account connected. Please connect your wallet first.");
+      throw new Error('No account connected. Please connect your wallet first.');
     }
 
     const signature = await window.ethereum.request({
@@ -150,7 +149,7 @@ export const signMessage = async (message: string): Promise<string> => {
 
     return signature;
   } catch (error) {
-    console.error("Failed to sign message:", error);
+    console.error('Failed to sign message:', error);
     throw error;
   }
 };
@@ -161,12 +160,12 @@ export const mintPromptNFT = async (promptData: any) => {
   // 1. Upload prompt data/image to IPFS
   // 2. Get the IPFS CID
   // 3. Call the smart contract's mint function
-  
-  console.log("Minting prompt:", promptData);
+
+  console.log('Minting prompt:', promptData);
   return {
     success: true,
     tokenId: Math.floor(Math.random() * 10000).toString(),
-    transactionHash: `0x${Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`
+    transactionHash: `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`,
   };
 };
 
@@ -182,5 +181,5 @@ export default {
   listenForNetworkChanges,
   isMetaMaskInstalled,
   signMessage,
-  mintPromptNFT
+  mintPromptNFT,
 };

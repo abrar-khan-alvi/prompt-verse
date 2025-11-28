@@ -1,22 +1,22 @@
 // src/components/Navbar.tsx
-"use client";
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Menu, X } from "lucide-react"; // npm install lucide-react
+'use client';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Menu, X } from 'lucide-react'; // npm install lucide-react
 // Placeholder for WalletButton - create this component separately later
 const WalletButtonPlaceholder = ({ connectedAccount, connectWallet }) => {
   if (!connectedAccount) {
     return (
       <button
         onClick={connectWallet}
-        className="px-4 py-2 rounded-md bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-primary-foreground font-semibold transition-all"
+        className="rounded-md bg-gradient-to-r from-purple-500 to-blue-500 px-4 py-2 font-semibold text-primary-foreground transition-all hover:from-purple-600 hover:to-blue-600"
       >
         Connect Wallet
       </button>
     );
   }
   return (
-    <div className="px-3 py-2 bg-secondary text-sm text-secondary-foreground rounded-md">
+    <div className="rounded-md bg-secondary px-3 py-2 text-sm text-secondary-foreground">
       {`${connectedAccount.substring(0, 6)}...${connectedAccount.substring(
         connectedAccount.length - 4
       )}`}
@@ -26,7 +26,7 @@ const WalletButtonPlaceholder = ({ connectedAccount, connectWallet }) => {
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [connectedAccount, setConnectedAccount] = useState("");
+  const [connectedAccount, setConnectedAccount] = useState('');
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -35,14 +35,14 @@ export default function Navbar() {
       if (window.ethereum) {
         try {
           const accounts = await window.ethereum.request({
-            method: "eth_accounts",
+            method: 'eth_accounts',
           });
           if (accounts.length > 0) {
             setConnectedAccount(accounts[0]);
           }
-          window.ethereum.on("accountsChanged", handleAccountsChanged);
+          window.ethereum.on('accountsChanged', handleAccountsChanged);
         } catch (err) {
-          console.error("Error fetching initial accounts:", err);
+          console.error('Error fetching initial accounts:', err);
         }
       }
     };
@@ -50,10 +50,7 @@ export default function Navbar() {
     return () => {
       if (window.ethereum?.removeListener) {
         // Check if removeListener exists
-        window.ethereum.removeListener(
-          "accountsChanged",
-          handleAccountsChanged
-        );
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
       }
     };
   }, []);
@@ -62,7 +59,7 @@ export default function Navbar() {
     if (accounts.length > 0) {
       setConnectedAccount(accounts[0]);
     } else {
-      setConnectedAccount("");
+      setConnectedAccount('');
     }
   };
 
@@ -70,40 +67,41 @@ export default function Navbar() {
     if (window.ethereum) {
       try {
         const accounts = await window.ethereum.request({
-          method: "eth_requestAccounts",
+          method: 'eth_requestAccounts',
         });
         handleAccountsChanged(accounts);
       } catch (err) {
-        console.error("Error connecting wallet:", err);
-        alert("Failed to connect wallet. See console for details.");
+        console.error('Error connecting wallet:', err);
+        alert('Failed to connect wallet. See console for details.');
       }
     } else {
-      alert("MetaMask not detected. Please install MetaMask!");
+      alert('MetaMask not detected. Please install MetaMask!');
     }
   };
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const navItems = [
-    { name: "Home", path: "/" },
-    { name: "Create", path: "/create" }, // Update path to your minting page
-    { name: "Profile", path: "/profile" },
+    { name: 'Home', path: '/' },
+    { name: 'Create', path: '/create' }, // Update path to your minting page
+    { name: 'Profile', path: '/profile' },
+    { name: 'Leaderboard', path: '/leaderboard' },
     { name: 'Marketplace', path: '/marketplace' },
   ];
 
   return (
-    <nav className="w-full py-4 px-6 border-b border-border backdrop-blur-lg fixed top-0 left-0 right-0 z-50 bg-background/80">
-      <div className="container mx-auto flex justify-between items-center">
+    <nav className="fixed left-0 right-0 top-0 z-50 w-full border-b border-border bg-background/80 px-6 py-4 backdrop-blur-lg">
+      <div className="container mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center">
-          <h1 className="text-2xl font-bold gradient-text">PromptVerse</h1>
+          <h1 className="gradient-text text-2xl font-bold">PromptVerse</h1>
         </Link>
 
-        <div className="hidden md:flex items-center space-x-6">
+        <div className="hidden items-center space-x-6 md:flex">
           {navItems.map((item) => (
             <Link
               key={item.name}
               href={item.path}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground transition-colors hover:text-foreground"
             >
               {item.name}
             </Link>
@@ -115,7 +113,7 @@ export default function Navbar() {
             />
           )}
           {!isClient && (
-            <div className="px-4 py-2 rounded-md bg-primary/50 text-primary-foreground opacity-50">
+            <div className="rounded-md bg-primary/50 px-4 py-2 text-primary-foreground opacity-50">
               Loading...
             </div>
           )}
@@ -133,18 +131,18 @@ export default function Navbar() {
       </div>
 
       {isClient && isMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-card border-b border-border py-4 px-6 flex flex-col space-y-4 shadow-xl">
+        <div className="absolute left-0 right-0 top-full flex flex-col space-y-4 border-b border-border bg-card px-6 py-4 shadow-xl md:hidden">
           {navItems.map((item) => (
             <Link
               key={item.name}
               href={item.path}
-              className="text-muted-foreground hover:text-foreground transition-colors py-2 block text-center text-lg"
+              className="block py-2 text-center text-lg text-muted-foreground transition-colors hover:text-foreground"
               onClick={() => setIsMenuOpen(false)}
             >
               {item.name}
             </Link>
           ))}
-          <div className="py-2 mt-2 flex justify-center">
+          <div className="mt-2 flex justify-center py-2">
             <WalletButtonPlaceholder
               connectedAccount={connectedAccount}
               connectWallet={connectWallet}

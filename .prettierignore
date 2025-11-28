@@ -1,0 +1,24 @@
+# Prettier ignore file
+node_modules
+.next
+out
+build
+dist
+coverage
+.cache
+
+# Generated files
+*.min.js
+*.min.css
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Artifacts
+src/lib/artifacts
+cache
+
+# Environment files
+.env*

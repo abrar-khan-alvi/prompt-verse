@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
-import { ethers } from "ethers";
-import AIPromptNFTAbiFile from "../lib/abis/AIPromptNFT.json";
+import { useState, useEffect, useCallback } from 'react';
+import { ethers } from 'ethers';
+import AIPromptNFTAbiFile from '../lib/abis/AIPromptNFT.json';
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-const CONTRACT_DEPLOYMENT_BLOCK = 0; // Set this to your contract's deployment block
-const EVENT_QUERY_BATCH_SIZE = 5000;
+const CONTRACT_DEPLOYMENT_BLOCK = 9710000; // Sepolia deployment block
+const EVENT_QUERY_BATCH_SIZE = 2000;
 
 const initialStats = {
-  promptsCreated: "...",
-  activeCreators: "...",
-  totalTrades: "...",
-  volumeTraded: "..."
+  promptsCreated: '...',
+  activeCreators: '...',
+  totalTrades: '...',
+  volumeTraded: '...',
 };
 
 async function fetchHeroStatistics(currentProvider) {
@@ -20,12 +20,12 @@ async function fetchHeroStatistics(currentProvider) {
   try {
     const contract = new ethers.Contract(CONTRACT_ADDRESS, AIPromptNFTAbiFile.abi, currentProvider);
     // Prompts Created
-    let promptsCreated = "0";
+    let promptsCreated = '0';
     try {
       const totalSupplyBigNum = await contract.totalSupply();
       promptsCreated = totalSupplyBigNum.toString();
     } catch (e) {
-      promptsCreated = "N/A";
+      promptsCreated = 'N/A';
     }
 
     // Events
@@ -39,7 +39,11 @@ async function fetchHeroStatistics(currentProvider) {
     for (let fromBlock = deploymentBlock; fromBlock <= latestBlock; fromBlock += batchSize) {
       const toBlock = Math.min(fromBlock + batchSize - 1, latestBlock);
       try {
-        const mintedBatch = await contract.queryFilter(contract.filters.PromptMinted(), fromBlock, toBlock);
+        const mintedBatch = await contract.queryFilter(
+          contract.filters.PromptMinted(),
+          fromBlock,
+          toBlock
+        );
         allMintedEvents = allMintedEvents.concat(mintedBatch);
       } catch (e) {}
     }
@@ -48,14 +52,20 @@ async function fetchHeroStatistics(currentProvider) {
     for (let fromBlock = deploymentBlock; fromBlock <= latestBlock; fromBlock += batchSize) {
       const toBlock = Math.min(fromBlock + batchSize - 1, latestBlock);
       try {
-        const soldBatch = await contract.queryFilter(contract.filters.PromptSold(), fromBlock, toBlock);
+        const soldBatch = await contract.queryFilter(
+          contract.filters.PromptSold(),
+          fromBlock,
+          toBlock
+        );
         allSoldEvents = allSoldEvents.concat(soldBatch);
       } catch (e) {}
     }
 
     // Active Creators
     const uniqueCreators = new Set();
-    allMintedEvents.forEach(event => event.args?.creator && uniqueCreators.add(event.args.creator.toString()));
+    allMintedEvents.forEach(
+      (event) => event.args?.creator && uniqueCreators.add(event.args.creator.toString())
+    );
     const activeCreators = uniqueCreators.size.toString();
 
     // Total Trades
@@ -63,7 +73,7 @@ async function fetchHeroStatistics(currentProvider) {
 
     // Volume Traded
     let totalVolumeInWei = ethers.getBigInt(0);
-    allSoldEvents.forEach(event => {
+    allSoldEvents.forEach((event) => {
       if (event.args?.price) {
         try {
           totalVolumeInWei = totalVolumeInWei + ethers.getBigInt(event.args.price);
@@ -72,7 +82,7 @@ async function fetchHeroStatistics(currentProvider) {
     });
     const volumeInEth = parseFloat(ethers.formatEther(totalVolumeInWei));
     const volumeTraded = isNaN(volumeInEth)
-      ? "N/A"
+      ? 'N/A'
       : `${volumeInEth.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })} ETH`;
 
     return {

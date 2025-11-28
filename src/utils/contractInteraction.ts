@@ -1,218 +1,219 @@
-
+import { ethers } from 'ethers';
+import AIPromptNFTAbiFile from '@/lib/abis/AIPromptNFT.json';
 import { getCurrentAccount } from './web3';
 
-// This is a mock implementation of contract interactions
-// In a real app, you would use a library like ethers.js or web3.js
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
 
-// Mock contract addresses
-const CONTRACT_ADDRESSES = {
-  promptNFT: '0x1234567890123456789012345678901234567890', // Mock address
-  marketplace: '0x0987654321098765432109876543210987654321' // Mock address
+// Helper to get contract instance
+export const getContract = async (withSigner = false) => {
+  if (!window.ethereum) throw new Error('No crypto wallet found');
+
+  const provider = new ethers.BrowserProvider(window.ethereum);
+
+  if (withSigner) {
+    const signer = await provider.getSigner();
+    return new ethers.Contract(CONTRACT_ADDRESS, AIPromptNFTAbiFile.abi, signer);
+  }
+
+  return new ethers.Contract(CONTRACT_ADDRESS, AIPromptNFTAbiFile.abi, provider);
 };
 
-// Mock function to mint a new NFT
-export const mintNFT = async (metadataURI: string, price: string): Promise<any> => {
+// Mint a new Prompt NFT
+export const mintPromptNFT = async (
+  title: string,
+  platform: string,
+  description: string,
+  promptText: string,
+  tokenURI: string,
+  priceEth: string,
+  royaltyPercent: number,
+  includeMedia: boolean,
+  includeOutputSample: boolean
+) => {
   try {
-    const account = await getCurrentAccount();
-    if (!account) {
-      throw new Error("No connected account found");
+    const contract = await getContract(true);
+    const priceWei = ethers.parseEther(priceEth || '0');
+    const royaltyBasisPoints = Math.floor(royaltyPercent * 100);
+
+    console.log('Minting with:', { title, platform, priceWei, royaltyBasisPoints });
+
+    const tx = await contract.mintPrompt(
+      title,
+      platform,
+      description,
+      promptText,
+      tokenURI,
+      priceWei,
+      royaltyBasisPoints,
+      includeMedia,
+      includeOutputSample
+    );
+
+    console.log('Mint tx sent:', tx.hash);
+    const receipt = await tx.wait();
+
+    // Find Token ID from events
+    let tokenId = null;
+    if (receipt.logs) {
+      const iface = new ethers.Interface(AIPromptNFTAbiFile.abi);
+      for (const log of receipt.logs) {
+        try {
+          const parsed = iface.parseLog(log);
+          if (parsed && parsed.name === 'PromptMinted') {
+            tokenId = parsed.args.tokenId.toString();
+            break;
+          }
+        } catch (e) {
+          continue;
+        }
+      }
     }
-    
-    console.log(`Minting NFT with metadata URI: ${metadataURI} and price: ${price} ETH`);
-    
-    // Simulate the minting delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Return mock transaction data
-    const tokenId = Math.floor(Math.random() * 1000000).toString();
+
     return {
       success: true,
+      transactionHash: receipt.hash,
       tokenId,
-      owner: account,
-      transactionHash: `0x${Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`,
-      metadataURI
     };
-  } catch (error) {
-    console.error("Error minting NFT:", error);
+  } catch (error: any) {
+    console.error('Error minting NFT:', error);
     throw error;
   }
 };
 
-// Mock function to list an NFT for sale
-export const listNFTForSale = async (tokenId: string, price: string): Promise<any> => {
+// List NFT for sale
+export const listNFTForSale = async (tokenId: string, priceEth: string) => {
   try {
-    const account = await getCurrentAccount();
-    if (!account) {
-      throw new Error("No connected account found");
+    const contract = await getContract(true);
+    const priceWei = ethers.parseEther(priceEth);
+
+    const tx = await contract.listForSale(tokenId, priceWei);
+    await tx.wait();
+
+    return { success: true, transactionHash: tx.hash };
+  } catch (error) {
+    console.error('Error listing NFT:', error);
+    throw error;
+  }
+};
+
+// Buy NFT
+export const buyNFT = async (tokenId: string, priceEth: string) => {
+  try {
+    const contract = await getContract(true);
+    const priceWei = ethers.parseEther(priceEth);
+
+    const tx = await contract.buyPrompt(tokenId, { value: priceWei });
+    await tx.wait();
+
+    return { success: true, transactionHash: tx.hash };
+  } catch (error) {
+    console.error('Error buying NFT:', error);
+    throw error;
+  }
+};
+
+// Get single NFT details
+export const getNFTDetails = async (tokenId: string) => {
+  try {
+    const contract = await getContract(false);
+
+    const [promptData, saleData, tokenURI, owner] = await Promise.all([
+      contract.getPromptData(tokenId),
+      contract.getSaleData(tokenId),
+      contract.tokenURI(tokenId),
+      contract.ownerOf(tokenId),
+    ]);
+
+    let metadata = {};
+    try {
+      if (tokenURI) {
+        // Handle IPFS gateway
+        const gatewayUrl = tokenURI.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/');
+        const response = await fetch(gatewayUrl);
+        metadata = await response.json();
+      }
+    } catch (e) {
+      console.error('Error fetching metadata:', e);
     }
-    
-    console.log(`Listing NFT #${tokenId} for sale at ${price} ETH`);
-    
-    // Simulate delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Return mock transaction data
-    return {
-      success: true,
-      tokenId,
-      price,
-      seller: account,
-      transactionHash: `0x${Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`
-    };
-  } catch (error) {
-    console.error("Error listing NFT for sale:", error);
-    throw error;
-  }
-};
 
-// Mock function to buy an NFT
-export const buyNFT = async (tokenId: string, price: string): Promise<any> => {
-  try {
-    const account = await getCurrentAccount();
-    if (!account) {
-      throw new Error("No connected account found");
-    }
-    
-    console.log(`Buying NFT #${tokenId} for ${price} ETH`);
-    
-    // Simulate delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Return mock transaction data
-    return {
-      success: true,
-      tokenId,
-      price,
-      buyer: account,
-      transactionHash: `0x${Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`
-    };
-  } catch (error) {
-    console.error("Error buying NFT:", error);
-    throw error;
-  }
-};
-
-// Mock function to get NFT details
-export const getNFTDetails = async (tokenId: string): Promise<any> => {
-  try {
-    console.log(`Getting details for NFT #${tokenId}`);
-    
-    // Simulate delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    // Return mock NFT data
     return {
       tokenId,
-      title: `Mock Prompt #${tokenId}`,
-      description: `This is a mock description for prompt #${tokenId}`,
-      owner: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-      creator: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
-      price: (Math.random() * 0.5 + 0.01).toFixed(4),
-      metadataURI: `ipfs://QmRandomCID${tokenId}`,
-      isForSale: Math.random() > 0.5,
-      createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
+      title_onchain: promptData.title,
+      platform: promptData.platform,
+      description_onchain: promptData.description,
+      promptText_onchain: promptData.promptText,
+      creator_onchain: promptData.creator,
+      currentOwner_onchain: owner,
+      createdAt: Number(promptData.createdAt) * 1000, // Convert to ms
+      price_onchain: saleData.isForSale ? ethers.formatEther(saleData.price) : null,
+      isForSale_onchain: saleData.isForSale,
+      seller: saleData.seller,
+      tokenURI,
+      includeMedia: promptData.includeMedia,
+      includeOutputSample: promptData.includeOutputSample,
+      // Metadata fields
+      metadataTitle: (metadata as any).title,
+      metadataDescription: (metadata as any).description,
+      metadataImage: (metadata as any).image?.replace(
+        'ipfs://',
+        'https://gateway.pinata.cloud/ipfs/'
+      ),
+      metadataPromptText: (metadata as any).promptText,
+      metadataInputMediaURIs: (metadata as any).inputMediaURIs?.map((uri: string) =>
+        uri.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
+      ),
+      metadataOutputSampleURIs: (metadata as any).outputSampleURIs?.map((uri: string) =>
+        uri.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')
+      ),
     };
   } catch (error) {
-    console.error("Error getting NFT details:", error);
+    console.error('Error fetching NFT details:', error);
     throw error;
   }
 };
 
-// Mock function to get user's NFTs
-export const getUserNFTs = async (address?: string): Promise<any[]> => {
+// Get NFTs for a specific user (created and owned)
+export const getUserNFTs = async (address: string) => {
   try {
-    const account = address || await getCurrentAccount();
-    if (!account) {
-      throw new Error("No connected account found");
-    }
-    
-    console.log(`Getting NFTs for user: ${account}`);
-    
-    // Simulate delay
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    
-    // Generate 0-5 mock NFTs
-    const count = Math.floor(Math.random() * 6);
-    const nfts = [];
-    
-    for (let i = 0; i < count; i++) {
-      const tokenId = Math.floor(Math.random() * 1000000).toString();
-      nfts.push({
-        tokenId,
-        title: `Mock Prompt #${tokenId}`,
-        description: `This is a mock description for prompt #${tokenId}`,
-        owner: account,
-        creator: Math.random() > 0.5 ? account : '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
-        price: (Math.random() * 0.5 + 0.01).toFixed(4),
-        metadataURI: `ipfs://QmRandomCID${tokenId}`,
-        isForSale: Math.random() > 0.5,
-        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
-      });
-    }
-    
+    const contract = await getContract(false);
+
+    // Get Created
+    const createdIds = await contract.getTokensByCreator(address);
+    // Get Owned
+    const ownedIds = await contract.getTokensByOwner(address);
+
+    // Combine and deduplicate
+    const allIds = Array.from(new Set([...createdIds, ...ownedIds].map((id) => id.toString())));
+
+    // Fetch details for all
+    const nfts = await Promise.all(allIds.map((id) => getNFTDetails(id)));
+
     return nfts;
   } catch (error) {
-    console.error("Error getting user NFTs:", error);
-    throw error;
+    console.error('Error fetching user NFTs:', error);
+    return [];
   }
 };
 
-// Mock function to get marketplace NFTs
-export const getMarketplaceNFTs = async (limit: number = 20): Promise<any[]> => {
+// Get Marketplace NFTs (all for sale)
+export const getMarketplaceNFTs = async () => {
   try {
-    console.log(`Getting marketplace NFTs, limit: ${limit}`);
-    
-    // Simulate delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Generate mock NFTs
-    const count = Math.min(limit, 10 + Math.floor(Math.random() * 10));
-    const nfts = [];
-    
-    for (let i = 0; i < count; i++) {
-      const tokenId = Math.floor(Math.random() * 1000000).toString();
-      nfts.push({
-        tokenId,
-        title: `Mock Prompt #${tokenId}`,
-        description: `This is a mock description for prompt #${tokenId}`,
-        owner: `0x${Array.from({length: 40}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`,
-        creator: `0x${Array.from({length: 40}, () => Math.floor(Math.random() * 16).toString(16)).join('')}`,
-        price: (Math.random() * 0.5 + 0.01).toFixed(4),
-        metadataURI: `ipfs://QmRandomCID${tokenId}`,
-        isForSale: true,
-        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
-      });
-    }
-    
+    const contract = await getContract(false);
+    const idsForSale = await contract.getTokensForSale();
+
+    const nfts = await Promise.all(idsForSale.map((id: any) => getNFTDetails(id.toString())));
     return nfts;
   } catch (error) {
-    console.error("Error getting marketplace NFTs:", error);
-    throw error;
-  }
-};
-
-// Update the existing mintPromptNFT function to use our new IPFS and contract utilities
-export const mintPromptNFT = async (promptData: any, metadataURI: string, price: string) => {
-  try {
-    const result = await mintNFT(metadataURI, price);
-    return {
-      success: true,
-      tokenId: result.tokenId,
-      transactionHash: result.transactionHash
-    };
-  } catch (error) {
-    console.error("Error in mintPromptNFT:", error);
-    throw error;
+    console.error('Error fetching marketplace NFTs:', error);
+    return [];
   }
 };
 
 export default {
-  CONTRACT_ADDRESSES,
-  mintNFT,
+  mintPromptNFT,
   listNFTForSale,
   buyNFT,
   getNFTDetails,
   getUserNFTs,
   getMarketplaceNFTs,
-  mintPromptNFT
 };

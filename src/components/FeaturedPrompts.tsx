@@ -1,19 +1,19 @@
-"use client";
-import React, { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import AIPromptNFTAbiFile from "@/lib/abis/AIPromptNFT.json";
-import PromptCard, { PromptCardProps } from "@/components/PromptCard";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+'use client';
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
+import AIPromptNFTAbiFile from '@/lib/abis/AIPromptNFT.json';
+import PromptCard, { PromptCardProps } from '@/components/PromptCard';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-const MY_PINATA_GATEWAY = "https://blush-causal-felidae-159.mypinata.cloud/ipfs/";
+const MY_PINATA_GATEWAY = 'https://blush-causal-felidae-159.mypinata.cloud/ipfs/';
 const BESU_RPC_URL = process.env.NEXT_PUBLIC_BESU_RPC_URL;
 const MAX_FEATURED = 8;
 
 function resolveIpfsUrl(ipfsUri: string | null | undefined): string | null {
-  if (!ipfsUri || typeof ipfsUri !== "string" || !ipfsUri.startsWith("ipfs://")) {
-    if (ipfsUri && (ipfsUri.startsWith("http://") || ipfsUri.startsWith("https://"))) {
+  if (!ipfsUri || typeof ipfsUri !== 'string' || !ipfsUri.startsWith('ipfs://')) {
+    if (ipfsUri && (ipfsUri.startsWith('http://') || ipfsUri.startsWith('https://'))) {
       return ipfsUri;
     }
     return null;
@@ -36,7 +36,7 @@ const FeaturePrompts: React.FC = () => {
       try {
         // Provider setup
         let provider: ethers.Provider;
-        if (typeof window !== "undefined" && (window as any).ethereum) {
+        if (typeof window !== 'undefined' && (window as any).ethereum) {
           provider = new ethers.BrowserProvider((window as any).ethereum);
         } else {
           provider = new ethers.JsonRpcProvider(BESU_RPC_URL);
@@ -61,9 +61,9 @@ const FeaturePrompts: React.FC = () => {
             let nftData: FeaturedNftDisplayData = {
               id: tokenIdStr,
               title: `Prompt #${tokenIdStr}`,
-              preview: "Loading details...",
+              preview: 'Loading details...',
               image: undefined,
-              price: saleData.price ? ethers.formatEther(saleData.price) : "0.00",
+              price: saleData.price ? ethers.formatEther(saleData.price) : '0.00',
               creator: {
                 address: saleData.seller.toString(),
                 name: undefined,
@@ -71,14 +71,14 @@ const FeaturePrompts: React.FC = () => {
               createdAt: undefined,
             };
 
-            if (tokenURIFromContract && tokenURIFromContract.startsWith("ipfs://")) {
+            if (tokenURIFromContract && tokenURIFromContract.startsWith('ipfs://')) {
               const metadataHttpUrl = resolveIpfsUrl(tokenURIFromContract);
               if (metadataHttpUrl) {
                 const metadataResponse = await fetch(metadataHttpUrl);
                 if (metadataResponse.ok) {
                   const meta = await metadataResponse.json();
                   nftData.title = meta.name || nftData.title;
-                  nftData.preview = meta.description || "No description available.";
+                  nftData.preview = meta.description || 'No description available.';
                   nftData.image = meta.image ? resolveIpfsUrl(meta.image) : undefined;
                   if (meta.createdAt) {
                     nftData.createdAt = Number(meta.createdAt) || undefined;
@@ -92,7 +92,9 @@ const FeaturePrompts: React.FC = () => {
           }
         });
 
-        let fetchedNfts = (await Promise.all(nftsDataPromises)).filter(Boolean) as FeaturedNftDisplayData[];
+        let fetchedNfts = (await Promise.all(nftsDataPromises)).filter(
+          Boolean
+        ) as FeaturedNftDisplayData[];
 
         // Sort by createdAt if available, else newest tokenId first
         fetchedNfts.sort((a, b) => {
@@ -112,35 +114,36 @@ const FeaturePrompts: React.FC = () => {
   }, []);
 
   return (
-    <section className="container mx-auto pt-8 pb-12 px-4">
-      <h2 className="text-3xl md:text-4xl font-bold mb-2 gradient-text text-center">
+    <section className="container mx-auto px-4 pb-12 pt-8">
+      <h2 className="gradient-text mb-2 text-center text-3xl font-bold md:text-4xl">
         Latest AI Prompts
       </h2>
-      <p className="text-lg text-muted-foreground text-center mb-10">
+      <p className="mb-10 text-center text-lg text-muted-foreground">
         Explore the freshest prompt NFTs minted by creators.
       </p>
 
-      {loading && <div className="text-center text-muted-foreground my-6">Loading latest prompts...</div>}
+      {loading && (
+        <div className="my-6 text-center text-muted-foreground">Loading latest prompts...</div>
+      )}
       {!loading && nfts.length === 0 && (
-        <div className="text-center text-muted-foreground my-6">
-          No prompts found.{" "}
+        <div className="my-6 text-center text-muted-foreground">
+          No prompts found.{' '}
           <Button asChild>
             <a href="/create">Mint one!</a>
           </Button>
         </div>
       )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7 xl:gap-8">
+      <div className="grid grid-cols-1 gap-7 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:gap-8">
         {nfts.map((nft) => (
           <PromptCard key={nft.id} {...nft} />
         ))}
       </div>
-        {/* View More Button */}
-        <div className="text-center mt-12">
-          <Button variant="outline" className="border-purple-500 hover:bg-purple-500/20">
-          <Link href='/marketplace'>View More Prompts</Link>  
-          
-          </Button>
-        </div>
+      {/* View More Button */}
+      <div className="mt-12 text-center">
+        <Button variant="outline" className="border-purple-500 hover:bg-purple-500/20">
+          <Link href="/marketplace">View More Prompts</Link>
+        </Button>
+      </div>
     </section>
   );
 };

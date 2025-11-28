@@ -1,30 +1,24 @@
-"use client";
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { ethers } from "ethers";
-import AIPromptNFTAbiFile from "@/lib/abis/AIPromptNFT.json";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/components/ui/use-toast";
+'use client';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { ethers } from 'ethers';
+import Link from 'next/link';
+import { FavoriteButton } from '@/components/FavoriteButton';
+import AIPromptNFTAbiFile from '@/lib/abis/AIPromptNFT.json';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/components/ui/use-toast';
 
 // --- CONFIGURATION ---
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
-const MY_PINATA_GATEWAY =
-  "https://blush-causal-felidae-159.mypinata.cloud/ipfs/";
-const BESU_RPC_URL = "http://localhost:8545";
+const MY_PINATA_GATEWAY = 'https://blush-causal-felidae-159.mypinata.cloud/ipfs/';
+const BESU_RPC_URL = 'http://localhost:8545';
 
 function resolveIpfsUrl(ipfsUri: string | null | undefined): string | null {
-  if (
-    !ipfsUri ||
-    typeof ipfsUri !== "string" ||
-    !ipfsUri.startsWith("ipfs://")
-  ) {
-    if (
-      ipfsUri &&
-      (ipfsUri.startsWith("http://") || ipfsUri.startsWith("https://"))
-    ) {
+  if (!ipfsUri || typeof ipfsUri !== 'string' || !ipfsUri.startsWith('ipfs://')) {
+    if (ipfsUri && (ipfsUri.startsWith('http://') || ipfsUri.startsWith('https://'))) {
       return ipfsUri;
     }
     return null;
@@ -37,66 +31,61 @@ export default function PromptDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { toast } = useToast();
-  const tokenId = typeof params.id === "string" ? params.id : undefined;
+  const tokenId = typeof params.id === 'string' ? params.id : undefined;
   const [nftDetails, setNftDetails] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [provider, setProvider] = useState<ethers.Provider | null>(null);
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [connectedAccount, setConnectedAccount] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [isProcessingTx, setIsProcessingTx] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("");
-  const [activeTab, setActiveTab] = useState<
-    "description" | "prompt" | "activity"
-  >("description");
+  const [statusMessage, setStatusMessage] = useState('');
+  const [activeTab, setActiveTab] = useState<'description' | 'prompt' | 'activity'>('description');
   const [activityEvents, setActivityEvents] = useState<any[]>([]);
   const [showListModal, setShowListModal] = useState(false);
-  const [listPrice, setListPrice] = useState(""); // price in ETH as string
+  const [listPrice, setListPrice] = useState(''); // price in ETH as string
   const [isListing, setIsListing] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
     const initProviderAndSigner = async () => {
-      if (typeof window.ethereum !== "undefined") {
+      if (typeof window.ethereum !== 'undefined') {
         const ethProvider = new ethers.BrowserProvider(window.ethereum);
         setProvider(ethProvider);
         try {
           const accounts = await window.ethereum.request?.({
-            method: "eth_accounts",
+            method: 'eth_accounts',
           });
           if (accounts && accounts.length > 0) {
             setConnectedAccount(accounts[0]);
             const ethSigner = await ethProvider.getSigner();
             setSigner(ethSigner);
           }
-          window.ethereum.on(
-            "accountsChanged",
-            async (newAccounts: string[]) => {
-              if (newAccounts.length > 0) {
-                setConnectedAccount(newAccounts[0]);
-                const newSigner = await ethProvider.getSigner();
-                setSigner(newSigner);
-              } else {
-                setConnectedAccount(null);
-                setSigner(null);
-              }
+          window.ethereum.on('accountsChanged', async (newAccounts: string[]) => {
+            if (newAccounts.length > 0) {
+              setConnectedAccount(newAccounts[0]);
+              const newSigner = await ethProvider.getSigner();
+              setSigner(newSigner);
+            } else {
+              setConnectedAccount(null);
+              setSigner(null);
             }
-          );
-        } catch (e) {}
+          });
+        } catch (e) { }
       } else {
         try {
           setProvider(new ethers.JsonRpcProvider(BESU_RPC_URL));
         } catch (e) {
-          setError("Could not connect to blockchain.");
+          setError('Could not connect to blockchain.');
         }
       }
     };
     initProviderAndSigner();
   }, []);
 
-  const CONTRACT_DEPLOY_BLOCK = 0; // Or your actual contract deployment block
+  const CONTRACT_DEPLOY_BLOCK = 9710000; // Updated to recent Sepolia block
   const EVENT_QUERY_BATCH_SIZE = 2000; // Try a smaller batch size for event queries
 
   // Modified helper to fetch events in chunks for a specific filter
@@ -108,11 +97,7 @@ export default function PromptDetailsPage() {
     chunkSize: number = EVENT_QUERY_BATCH_SIZE
   ): Promise<ethers.EventLog[]> {
     let allChunkEvents: ethers.EventLog[] = [];
-    for (
-      let currentFrom = fromBlock;
-      currentFrom <= toBlockNumber;
-      currentFrom += chunkSize
-    ) {
+    for (let currentFrom = fromBlock; currentFrom <= toBlockNumber; currentFrom += chunkSize) {
       let currentTo = Math.min(currentFrom + chunkSize - 1, toBlockNumber);
       try {
         const chunkEvents = (await contract.queryFilter(
@@ -124,20 +109,18 @@ export default function PromptDetailsPage() {
       } catch (e: any) {
         console.error(
           `Error fetching event chunk (${String(
-            typeof filter === "string" ? filter : filter.topics
+            typeof filter === 'string' ? filter : filter.topics
           )}) from ${currentFrom} to ${currentTo}:`,
           e.message
         );
         // Optionally, re-throw or handle (e.g., try smaller chunk if it's a range error)
         if (
-          e.data?.message?.includes("exceeds maximum RPC range limit") ||
-          e.message?.includes("exceeds maximum RPC range limit")
+          e.data?.message?.includes('exceeds maximum RPC range limit') ||
+          e.message?.includes('exceeds maximum RPC range limit')
         ) {
           // If even a smaller chunk fails with range limit, the limit is very small.
           // This indicates a potential node configuration issue or a very busy block range.
-          setError(
-            (prev) => `${prev} Event query range limit hit for a batch. `
-          );
+          setError((prev) => `${prev} Event query range limit hit for a batch. `);
         }
       }
     }
@@ -146,14 +129,14 @@ export default function PromptDetailsPage() {
 
   const fetchActivityEvents = useCallback(async () => {
     if (!tokenId || !provider || !CONTRACT_ADDRESS) {
-      console.warn("[ActivityLog] Missing dependencies for fetching activity.");
+      console.warn('[ActivityLog] Missing dependencies for fetching activity.');
       setActivityEvents([]); // Clear previous logs
       setLoadingActivity(false); // Ensure loading stops
       return;
     }
 
     setLoadingActivity(true);
-    setError(""); // Clear previous page-level errors
+    setError(''); // Clear previous page-level errors
     // console.log(`[ActivityLog] Fetching events for Token ID: ${tokenId}`);
 
     let allProcessedEvents: ActivityEvent[] = [];
@@ -174,11 +157,7 @@ export default function PromptDetailsPage() {
       const soldFilter = contract.filters.PromptSold(numericTokenId);
       const delistedFilter = contract.filters.PromptDelisted(numericTokenId);
       // For Transfer, tokenId is the 3rd indexed topic. from and to are first two.
-      const transferFilter = contract.filters.Transfer(
-        null,
-        null,
-        numericTokenId
-      );
+      const transferFilter = contract.filters.Transfer(null, null, numericTokenId);
 
       const [
         mintedEvents,
@@ -204,13 +183,13 @@ export default function PromptDetailsPage() {
         if (event.args && block) {
           allProcessedEvents.push({
             id: `${event.transactionHash}-${event.logIndex}-minted`,
-            type: "Minted",
+            type: 'Minted',
             from: ethers.ZeroAddress,
             to: event.args.creator,
             price:
               event.args.price > 0
                 ? `${ethers.formatEther(event.args.price)} ETH (Initial List)`
-                : "-",
+                : '-',
             date: new Date(block.timestamp * 1000).toLocaleDateString(),
             timestamp: block.timestamp,
             txHash: event.transactionHash,
@@ -223,7 +202,7 @@ export default function PromptDetailsPage() {
         if (event.args && block) {
           allProcessedEvents.push({
             id: `${event.transactionHash}-${event.logIndex}-listed`,
-            type: "Listed/Price Update",
+            type: 'Listed/Price Update',
             from: event.args.seller,
             to: null,
             price: `${ethers.formatEther(event.args.price)} ETH`,
@@ -239,7 +218,7 @@ export default function PromptDetailsPage() {
         if (event.args && block) {
           allProcessedEvents.push({
             id: `${event.transactionHash}-${event.logIndex}-sold`,
-            type: "Sold",
+            type: 'Sold',
             from: event.args.seller,
             to: event.args.buyer,
             price: `${ethers.formatEther(event.args.price)} ETH`,
@@ -255,10 +234,10 @@ export default function PromptDetailsPage() {
         if (event.args && block) {
           allProcessedEvents.push({
             id: `${event.transactionHash}-${event.logIndex}-delisted`,
-            type: "Delisted",
+            type: 'Delisted',
             from: event.args.seller,
             to: null,
-            price: "-",
+            price: '-',
             date: new Date(block.timestamp * 1000).toLocaleDateString(),
             timestamp: block.timestamp,
             txHash: event.transactionHash,
@@ -280,10 +259,10 @@ export default function PromptDetailsPage() {
           if (!isMintEvent && !isRedundantSaleTransfer) {
             allProcessedEvents.push({
               id: `${event.transactionHash}-${event.logIndex}-transfer`,
-              type: "Transferred",
+              type: 'Transferred',
               from: event.args.from,
               to: event.args.to,
-              price: "-",
+              price: '-',
               date: new Date(block.timestamp * 1000).toLocaleDateString(),
               timestamp: block.timestamp,
               txHash: event.transactionHash,
@@ -295,10 +274,7 @@ export default function PromptDetailsPage() {
       allProcessedEvents.sort((a, b) => b.timestamp - a.timestamp); // Sort newest first
       setActivityEvents(allProcessedEvents);
     } catch (e: any) {
-      console.error(
-        `[ActivityLog] Main error fetching activity for token ${tokenId}:`,
-        e
-      );
+      console.error(`[ActivityLog] Main error fetching activity for token ${tokenId}:`, e);
       setError((prev) => `${prev}Failed to fetch activity log: ${e.message}. `);
       setActivityEvents([]); // Clear on error
     } finally {
@@ -308,34 +284,25 @@ export default function PromptDetailsPage() {
 
   const fetchNftDetails = useCallback(async () => {
     if (!tokenId || !provider || !CONTRACT_ADDRESS) {
-      if (isClient && !provider && tokenId)
-        setError("Blockchain provider not available.");
-      if (isClient && !tokenId) setError("Token ID not found in URL.");
+      if (isClient && !provider && tokenId) setError('Blockchain provider not available.');
+      if (isClient && !tokenId) setError('Token ID not found in URL.');
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    setError("");
+    setError('');
     try {
-      const contract = new ethers.Contract(
-        CONTRACT_ADDRESS,
-        AIPromptNFTAbiFile.abi,
-        provider
-      );
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, AIPromptNFTAbiFile.abi, provider);
       const numericTokenId = tokenId.toString(); // Instead of ethers.getBigInt(tokenId)
 
-      const [
-        promptDataChain,
-        saleDataChain,
-        tokenURIFromContract,
-        currentOwner,
-      ] = await Promise.all([
-        contract.getPromptData(numericTokenId),
-        contract.getSaleData(numericTokenId),
-        contract.tokenURI(numericTokenId),
-        contract.ownerOf(numericTokenId),
-      ]);
+      const [promptDataChain, saleDataChain, tokenURIFromContract, currentOwner] =
+        await Promise.all([
+          contract.getPromptData(numericTokenId),
+          contract.getSaleData(numericTokenId),
+          contract.tokenURI(numericTokenId),
+          contract.ownerOf(numericTokenId),
+        ]);
 
       let details: any = {
         tokenId,
@@ -344,56 +311,49 @@ export default function PromptDetailsPage() {
         description_onchain: promptDataChain.description,
         promptText_onchain: promptDataChain.promptText,
         creator_onchain: promptDataChain.creator,
-        createdAt_onchain: new Date(
-          Number(promptDataChain.createdAt) * 1000
-        ).toISOString(),
+        createdAt_onchain: new Date(Number(promptDataChain.createdAt) * 1000).toISOString(),
         includeMedia_onchain: promptDataChain.includeMedia,
         includeOutputSample_onchain: promptDataChain.includeOutputSample,
         price_onchain:
-          saleDataChain.price > 0
-            ? ethers.formatEther(saleDataChain.price)
-            : "Not for sale",
+          saleDataChain.price > 0 ? ethers.formatEther(saleDataChain.price) : 'Not for sale',
         isForSale_onchain: saleDataChain.isForSale,
         seller_onchain: saleDataChain.seller,
         currentOwner_onchain: currentOwner,
         tokenURI: tokenURIFromContract?.toString(),
       };
 
-      if (details.tokenURI && details.tokenURI.startsWith("ipfs://")) {
+      if (details.tokenURI && details.tokenURI.startsWith('ipfs://')) {
         const metadataHttpUrl = resolveIpfsUrl(details.tokenURI);
         if (metadataHttpUrl) {
           const metadataResponse = await fetch(metadataHttpUrl);
           if (metadataResponse.ok) {
             const fetchedMetadata = await metadataResponse.json();
-            details.metadataTitle =
-              fetchedMetadata.name || details.title_onchain;
+            details.metadataTitle = fetchedMetadata.name || details.title_onchain;
             details.metadataDescription =
               fetchedMetadata.description || details.description_onchain;
             if (fetchedMetadata.image) {
               details.metadataImage = resolveIpfsUrl(fetchedMetadata.image);
             }
-            details.metadataPromptText =
-              fetchedMetadata.prompt_text || details.promptText_onchain;
+            details.metadataPromptText = fetchedMetadata.prompt_text || details.promptText_onchain;
             details.metadataInputMediaURIs = fetchedMetadata.input_media_uris
               ?.map(resolveIpfsUrl)
               .filter((url: any) => url !== null);
-            details.metadataOutputSampleURIs =
-              fetchedMetadata.output_sample_uris
-                ?.map(resolveIpfsUrl)
-                .filter((url: any) => url !== null);
+            details.metadataOutputSampleURIs = fetchedMetadata.output_sample_uris
+              ?.map(resolveIpfsUrl)
+              .filter((url: any) => url !== null);
             details.metadataAttributes = fetchedMetadata.attributes;
           } else {
             details.fetchError = `Metadata fetch failed (Status: ${metadataResponse.status})`;
           }
         } else {
-          details.fetchError = "Could not resolve IPFS URI for metadata.";
+          details.fetchError = 'Could not resolve IPFS URI for metadata.';
         }
       } else {
-        details.fetchError = "Invalid or non-IPFS Token URI from contract.";
+        details.fetchError = 'Invalid or non-IPFS Token URI from contract.';
       }
       setNftDetails(details);
     } catch (e: any) {
-      setError(`Failed to fetch details: ${e.message || "Unknown error"}`);
+      setError(`Failed to fetch details: ${e.message || 'Unknown error'}`);
       setNftDetails(null);
     } finally {
       setLoading(false);
@@ -408,53 +368,45 @@ export default function PromptDetailsPage() {
   }, [isClient, provider, tokenId, fetchNftDetails, fetchActivityEvents]);
 
   const handleBuy = async () => {
-    if (
-      !nftDetails ||
-      !nftDetails.isForSale_onchain ||
-      !signer ||
-      !connectedAccount
-    ) {
+    if (!nftDetails || !nftDetails.isForSale_onchain || !signer || !connectedAccount) {
       toast({
-        title: "Cannot Buy",
-        description: "NFT not for sale or wallet not connected.",
-        variant: "destructive",
+        title: 'Cannot Buy',
+        description: 'NFT not for sale or wallet not connected.',
+        variant: 'destructive',
       });
       return;
     }
     setIsProcessingTx(true);
-    setStatusMessage("Preparing buy transaction...");
+    setStatusMessage('Preparing buy transaction...');
     try {
       const contractWithSigner = new ethers.Contract(
-        CONTRACT_ADDRESS,
+        CONTRACT_ADDRESS!,
         AIPromptNFTAbiFile.abi,
         signer
       );
       const priceInWei = ethers.parseEther(nftDetails.price_onchain);
 
-      setStatusMessage("Please approve the transaction in MetaMask...");
-      const tx = await contractWithSigner.buyPrompt(
-        ethers.getBigInt(nftDetails.tokenId),
-        {
-          value: priceInWei,
-        }
-      );
-      setStatusMessage("Processing transaction on blockchain...");
+      setStatusMessage('Please approve the transaction in MetaMask...');
+      const tx = await contractWithSigner.buyPrompt(ethers.getBigInt(nftDetails.tokenId), {
+        value: priceInWei,
+      });
+      setStatusMessage('Processing transaction on blockchain...');
       await tx.wait();
 
       toast({
-        title: "Purchase Successful!",
+        title: 'Purchase Successful!',
         description: `You now own NFT #${nftDetails.tokenId}.`,
       });
       setIsProcessingTx(false);
-      setStatusMessage("");
+      setStatusMessage('');
       await fetchNftDetails();
       await fetchActivityEvents();
-      router.push("/profile");
+      router.push('/profile');
     } catch (error: any) {
       toast({
-        title: "Purchase Failed",
+        title: 'Purchase Failed',
         description: error?.data?.message || error?.reason || error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
       setIsProcessingTx(false);
       setStatusMessage(`Error: ${error.message}`);
@@ -462,64 +414,55 @@ export default function PromptDetailsPage() {
   };
 
   function shortAddr(addr: string) {
-    return addr
-      ? `${addr.substring(0, 8)}...${addr.substring(addr.length - 5)}`
-      : "";
+    return addr ? `${addr.substring(0, 8)}...${addr.substring(addr.length - 5)}` : '';
   }
   const isOwner =
     !!connectedAccount &&
     !!nftDetails?.currentOwner_onchain &&
-    connectedAccount.toLowerCase() ===
-      nftDetails?.currentOwner_onchain?.toLowerCase();
+    connectedAccount.toLowerCase() === nftDetails?.currentOwner_onchain?.toLowerCase();
 
   // --- UI ---
   if (!isClient || loading) {
     return (
-      <div className="container mx-auto py-8 px-4 text-center text-muted-foreground">
+      <div className="container mx-auto px-4 py-8 text-center text-muted-foreground">
         Loading NFT details...
       </div>
     );
   }
   if (error) {
-    return (
-      <div className="container mx-auto py-8 px-4 text-center text-destructive">
-        {error}
-      </div>
-    );
+    return <div className="container mx-auto px-4 py-8 text-center text-destructive">{error}</div>;
   }
   if (!nftDetails) {
     return (
-      <div className="container mx-auto py-8 px-4 text-center text-muted-foreground">
+      <div className="container mx-auto px-4 py-8 text-center text-muted-foreground">
         NFT details not found. It might not exist or there was an error.
       </div>
     );
   }
 
   return (
-    <main className="pt-24 pb-16 px-4 min-h-screen bg-background">
+    <main className="min-h-screen bg-background px-4 pb-16 pt-24">
       <div className="container mx-auto max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* LEFT COLUMN */}
           <div className="lg:col-span-1">
             {/* Image Card */}
-            <div className="rounded-lg overflow-hidden border border-border bg-card">
+            <div className="overflow-hidden rounded-lg border border-border bg-card">
               {nftDetails.metadataImage ? (
                 <img
                   src={nftDetails.metadataImage}
                   alt={nftDetails.metadataTitle || nftDetails.title_onchain}
-                  className="w-full object-cover aspect-square"
+                  className="aspect-square w-full object-cover"
                 />
               ) : (
-                <div className="rounded-lg bg-muted flex items-center justify-center aspect-square">
+                <div className="flex aspect-square items-center justify-center rounded-lg bg-muted">
                   <p className="text-muted-foreground">No image available</p>
                 </div>
               )}
             </div>
             {/* Token Info */}
-            <div className="mt-4 glass p-4 rounded-lg bg-card border border-border">
-              <h3 className="font-medium mb-2 text-foreground">
-                Token Information
-              </h3>
+            <div className="glass mt-4 rounded-lg border border-border bg-card p-4">
+              <h3 className="mb-2 font-medium text-foreground">Token Information</h3>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <div className="flex justify-between">
                   <span>Token ID:</span>
@@ -529,20 +472,16 @@ export default function PromptDetailsPage() {
                   <span>IPFS Hash:</span>
                   {isOwner ? (
                     <a
-                      href={resolveIpfsUrl(nftDetails.tokenURI)}
+                      href={resolveIpfsUrl(nftDetails.tokenURI) || '#'}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-500 hover:underline truncate max-w-[150px]"
+                      className="max-w-[150px] truncate text-blue-500 hover:underline"
                     >
-                      {nftDetails.tokenURI
-                        ? nftDetails.tokenURI.substring(7, 17)
-                        : "N/A"}
+                      {nftDetails.tokenURI ? nftDetails.tokenURI.substring(7, 17) : 'N/A'}
                       ...
                     </a>
                   ) : (
-                    <span className="italic text-muted-foreground">
-                      Only owner can view
-                    </span>
+                    <span className="italic text-muted-foreground">Only owner can view</span>
                   )}
                 </div>
               </div>
@@ -551,42 +490,49 @@ export default function PromptDetailsPage() {
 
           {/* RIGHT COLUMN */}
           <div className="lg:col-span-2">
-            <h1 className="text-3xl font-bold mb-2 gradient-text text-foreground">
-              {nftDetails.metadataTitle ||
-                nftDetails.title_onchain ||
-                `Prompt NFT #${nftDetails.tokenId}`}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 mb-6">
-              <div className="text-muted-foreground text-sm">
-                Created by{" "}
-                <span className="text-purple-400">
-                  {shortAddr(nftDetails.creator_onchain)}
-                </span>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="gradient-text mb-2 text-3xl font-bold md:text-4xl">
+                  {nftDetails.metadataTitle ||
+                    nftDetails.title_onchain ||
+                    `Prompt NFT #${nftDetails.tokenId}`}
+                </h1>
+                <div className="flex items-center gap-2 text-gray-400">
+                  <span>Created by</span>
+                  <Link
+                    href={`/profile/${nftDetails.creator_onchain}`}
+                    className="text-purple-400 hover:underline"
+                  >
+                    {shortAddr(nftDetails.creator_onchain)}
+                  </Link>
+                </div>
               </div>
-              <Separator orientation="vertical" className="h-4" />
-              <div className="text-muted-foreground text-sm">
-                Owned by{" "}
+              <div className="mt-2">
+                <FavoriteButton tokenId={nftDetails.tokenId} />
+              </div>
+            </div>
+            <div className="mb-6 flex flex-wrap items-center gap-2">
+              <div className="text-sm text-muted-foreground">
+                Owned by{' '}
                 <span className="text-purple-400">
                   {shortAddr(nftDetails.currentOwner_onchain)}
                 </span>
               </div>
             </div>
-            <Card className="glass mb-6 bg-card border border-border">
+            <Card className="glass mb-6 border border-border bg-card">
               <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <div className="mb-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
                   <div>
-                    <p className="text-muted-foreground text-sm">
-                      Current Price
-                    </p>
+                    <p className="text-sm text-muted-foreground">Current Price</p>
                     <p className="text-2xl font-bold text-foreground">
-                      {nftDetails.price_onchain !== "Not for sale"
+                      {nftDetails.price_onchain !== 'Not for sale'
                         ? `${nftDetails.price_onchain} ETH`
-                        : "Not Listed"}
+                        : 'Not Listed'}
                     </p>
-                    {isOwner && nftDetails.price_onchain === "Not for sale" && (
+                    {isOwner && nftDetails.price_onchain === 'Not for sale' && (
                       <Button
                         onClick={() => setShowListModal(true)}
-                        className="bg-gradient-to-r from-green-500 to-blue-600 mt-2"
+                        className="mt-2 bg-gradient-to-r from-green-500 to-blue-600"
                       >
                         List For Sale
                       </Button>
@@ -594,40 +540,31 @@ export default function PromptDetailsPage() {
                   </div>
                   <Button
                     onClick={handleBuy}
-                    disabled={
-                      isProcessingTx || !nftDetails.isForSale_onchain || isOwner
-                    }
+                    disabled={isProcessingTx || !nftDetails.isForSale_onchain || isOwner}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
                     {isProcessingTx
-                      ? "Processing..."
+                      ? 'Processing...'
                       : isOwner
-                      ? "You Own This NFT"
-                      : nftDetails.isForSale_onchain
-                      ? "Purchase Now"
-                      : "Not For Sale"}
+                        ? 'You Own This NFT'
+                        : nftDetails.isForSale_onchain
+                          ? 'Purchase Now'
+                          : 'Not For Sale'}
                   </Button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  By purchasing this NFT, you acquire full rights to use this
-                  prompt for commercial purposes. Original creator earns royalty
-                  on secondary sales.
+                  By purchasing this NFT, you acquire full rights to use this prompt for commercial
+                  purposes. Original creator earns royalty on secondary sales.
                 </p>
                 {statusMessage && (
-                  <div className="text-xs text-muted-foreground mt-2">
-                    {statusMessage}
-                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">{statusMessage}</div>
                 )}
               </CardContent>
             </Card>
 
             {/* TABS */}
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              <TabsList className="w-full bg-muted border-border">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full border-border bg-muted">
                 <TabsTrigger value="description" className="flex-1">
                   Description
                 </TabsTrigger>
@@ -641,12 +578,12 @@ export default function PromptDetailsPage() {
 
               {/* ---- DESCRIPTION TAB ---- */}
               <TabsContent value="description" className="mt-4">
-                <Card className="glass bg-card border border-border">
+                <Card className="glass border border-border bg-card">
                   <CardContent className="p-4">
-                    <p className="text-gray-300 whitespace-pre-line">
+                    <p className="whitespace-pre-line text-gray-300">
                       {nftDetails.metadataDescription ||
                         nftDetails.description_onchain ||
-                        "No description provided."}
+                        'No description provided.'}
                     </p>
                   </CardContent>
                 </Card>
@@ -654,24 +591,24 @@ export default function PromptDetailsPage() {
 
               {/* ---- PROMPT TAB ---- */}
               <TabsContent value="prompt" className="mt-4">
-                <Card className="glass bg-card border border-border">
+                <Card className="glass border border-border bg-card">
                   <CardContent className="p-4">
                     {/* Only owner can see prompt text */}
                     {isOwner ? (
                       <>
-                        <div className="bg-muted rounded-md p-4 text-gray-300 whitespace-pre-line">
+                        <div className="whitespace-pre-line rounded-md bg-muted p-4 text-gray-300">
                           {nftDetails.metadataPromptText ||
                             nftDetails.promptText_onchain ||
-                            "Prompt text not available."}
+                            'Prompt text not available.'}
                         </div>
-                        {/* Only owner can see input media */}
-                        {nftDetails.metadataInputMediaURIs &&
-                          nftDetails.metadataInputMediaURIs.length > 0 && (
-                            <div className="space-y-2 mt-6">
-                              <h4 className="font-semibold text-lg text-foreground">
-                                Input Media
-                              </h4>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+
+                        {/* Input Media - Only owner can see */}
+                        {nftDetails.includeMedia_onchain && (
+                          <div className="mt-6 space-y-2">
+                            <h4 className="text-lg font-semibold text-foreground">Input Media</h4>
+                            {nftDetails.metadataInputMediaURIs &&
+                              nftDetails.metadataInputMediaURIs.length > 0 ? (
+                              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                                 {nftDetails.metadataInputMediaURIs.map(
                                   (uri: string, idx: number) =>
                                     uri ? (
@@ -680,12 +617,48 @@ export default function PromptDetailsPage() {
                                         href={uri}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="block aspect-square bg-muted rounded overflow-hidden hover:opacity-80"
+                                        className="block aspect-square overflow-hidden rounded bg-muted hover:opacity-80"
                                       >
                                         <img
                                           src={uri}
                                           alt={`Input media ${idx + 1}`}
-                                          className="w-full h-full object-cover"
+                                          className="h-full w-full object-cover"
+                                        />
+                                      </a>
+                                    ) : null
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-sm italic text-muted-foreground">
+                                Input media was marked as included but not found in metadata.
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Output Samples - Owner view */}
+                        {nftDetails.includeOutputSample_onchain &&
+                          nftDetails.metadataOutputSampleURIs &&
+                          nftDetails.metadataOutputSampleURIs.length > 0 && (
+                            <div className="mt-6 space-y-2">
+                              <h4 className="text-lg font-semibold text-foreground">
+                                Output Samples
+                              </h4>
+                              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                                {nftDetails.metadataOutputSampleURIs.map(
+                                  (uri: string, idx: number) =>
+                                    uri ? (
+                                      <a
+                                        key={idx}
+                                        href={uri}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block aspect-square overflow-hidden rounded bg-muted hover:opacity-80"
+                                      >
+                                        <img
+                                          src={uri}
+                                          alt={`Output sample ${idx + 1}`}
+                                          className="h-full w-full object-cover"
                                         />
                                       </a>
                                     ) : null
@@ -695,66 +668,58 @@ export default function PromptDetailsPage() {
                           )}
                       </>
                     ) : (
-                      <div className="bg-muted rounded-md p-4 text-gray-400 italic">
-                        Only the owner can view the prompt text and input media.
-                      </div>
-                    )}
-
-                    {/* Output Samples: visible to everyone */}
-                    {nftDetails.metadataOutputSampleURIs &&
-                      nftDetails.metadataOutputSampleURIs.length > 0 && (
-                        <div className="space-y-2 mt-6">
-                          <h4 className="font-semibold text-lg text-foreground">
-                            Output Samples
-                          </h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                            {nftDetails.metadataOutputSampleURIs.map(
-                              (uri: string, idx: number) =>
-                                uri ? (
-                                  <a
-                                    key={idx}
-                                    href={uri}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="block aspect-square bg-muted rounded overflow-hidden hover:opacity-80"
-                                  >
-                                    <img
-                                      src={uri}
-                                      alt={`Output sample ${idx + 1}`}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </a>
-                                ) : null
-                            )}
-                          </div>
+                      <>
+                        <div className="rounded-md bg-muted p-4 italic text-gray-400">
+                          Only the owner can view the prompt text and input media.
                         </div>
-                      )}
+
+                        {/* Output Samples - Visible to everyone */}
+                        {nftDetails.metadataOutputSampleURIs &&
+                          nftDetails.metadataOutputSampleURIs.length > 0 && (
+                            <div className="mt-6 space-y-2">
+                              <h4 className="text-lg font-semibold text-foreground">
+                                Output Samples
+                              </h4>
+                              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                                {nftDetails.metadataOutputSampleURIs.map(
+                                  (uri: string, idx: number) =>
+                                    uri ? (
+                                      <a
+                                        key={idx}
+                                        href={uri}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block aspect-square overflow-hidden rounded bg-muted hover:opacity-80"
+                                      >
+                                        <img
+                                          src={uri}
+                                          alt={`Output sample ${idx + 1}`}
+                                          className="h-full w-full object-cover"
+                                        />
+                                      </a>
+                                    ) : null
+                                )}
+                              </div>
+                            </div>
+                          )}
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
               {/* ---- ACTIVITY TAB ---- */}
               <TabsContent value="activity" className="mt-4">
-                <Card className="glass bg-card border border-border">
+                <Card className="glass border border-border bg-card">
                   <CardContent className="p-4">
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-border">
-                            <th className="text-left py-3 px-4 font-medium">
-                              Event
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              From
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              To
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              Price
-                            </th>
-                            <th className="text-left py-3 px-4 font-medium">
-                              Date
-                            </th>
+                            <th className="px-4 py-3 text-left font-medium">Event</th>
+                            <th className="px-4 py-3 text-left font-medium">From</th>
+                            <th className="px-4 py-3 text-left font-medium">To</th>
+                            <th className="px-4 py-3 text-left font-medium">Price</th>
+                            <th className="px-4 py-3 text-left font-medium">Date</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -762,7 +727,7 @@ export default function PromptDetailsPage() {
                             <tr>
                               <td
                                 colSpan={5}
-                                className="py-3 px-4 text-center text-muted-foreground"
+                                className="px-4 py-3 text-center text-muted-foreground"
                               >
                                 No activity found.
                               </td>
@@ -772,64 +737,56 @@ export default function PromptDetailsPage() {
                             // Construct a more robust key, ensuring parts are defined.
                             // Using index as a last resort if item.id is somehow still problematic.
                             const rowKey =
-                              item.id ||
-                              `${item.type}-${index}-${
-                                item.timestamp || Date.now()
-                              }`;
+                              item.id || `${item.type}-${index}-${item.timestamp || Date.now()}`;
 
-                            let from = "-";
-                            let to = "-";
-                            let price = "-";
+                            let from = '-';
+                            let to = '-';
+                            let price = '-';
 
                             // Use optional chaining and nullish coalescing for safer access
                             const fromAddress = item.from;
                             const toAddress = item.to;
 
-                            if (item.type === "Minted") {
-                              from = "Null Address (Mint)"; // Mint event.args.from is usually address(0)
+                            if (item.type === 'Minted') {
+                              from = 'Null Address (Mint)'; // Mint event.args.from is usually address(0)
                               to = shortAddr(item.to); // event.args.creator
-                            } else if (item.type === "Listed/Price Update") {
+                            } else if (item.type === 'Listed/Price Update') {
                               from = shortAddr(item.from); // event.args.seller
                               // to is not applicable
-                              price = item.price || "-";
-                            } else if (item.type === "Sold") {
+                              price = item.price || '-';
+                            } else if (item.type === 'Sold') {
                               from = shortAddr(item.from); // event.args.seller
                               to = shortAddr(item.to); // event.args.buyer
-                              price = item.price || "-";
-                            } else if (item.type === "Delisted") {
+                              price = item.price || '-';
+                            } else if (item.type === 'Delisted') {
                               from = shortAddr(item.from); // event.args.seller
                               // to is not applicable
-                            } else if (item.type === "Transferred") {
+                            } else if (item.type === 'Transferred') {
                               from = shortAddr(item.from);
                               to = shortAddr(item.to);
                             }
 
                             return (
-                              <tr
-                                key={rowKey}
-                                className="border-b border-border hover:bg-muted/30"
-                              >
-                                <td className="px-3 sm:px-6 py-4 font-medium text-foreground whitespace-nowrap">
+                              <tr key={rowKey} className="border-b border-border hover:bg-muted/30">
+                                <td className="whitespace-nowrap px-3 py-4 font-medium text-foreground sm:px-6">
                                   {item.type}
                                 </td>
                                 <td
-                                  className="px-3 sm:px-6 py-4 font-mono text-xs hidden sm:table-cell truncate max-w-[100px]"
+                                  className="hidden max-w-[100px] truncate px-3 py-4 font-mono text-xs sm:table-cell sm:px-6"
                                   title={fromAddress || undefined}
                                 >
                                   {from}
                                 </td>
                                 <td
-                                  className="px-3 sm:px-6 py-4 font-mono text-xs truncate max-w-[100px]"
+                                  className="max-w-[100px] truncate px-3 py-4 font-mono text-xs sm:px-6"
                                   title={toAddress || undefined}
                                 >
                                   {to}
                                 </td>
-                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                  {price}
-                                </td>
-                                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                <td className="whitespace-nowrap px-3 py-4 sm:px-6">{price}</td>
+                                <td className="whitespace-nowrap px-3 py-4 sm:px-6">
                                   <span suppressHydrationWarning>
-                                    {" "}
+                                    {' '}
                                     {/* For date, which can have SSR/client mismatch */}
                                     {item.date}
                                   </span>
@@ -848,20 +805,16 @@ export default function PromptDetailsPage() {
         </div>
       </div>
       {showListModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-card p-8 rounded-lg border max-w-sm w-full">
-            <h2 className="text-lg font-bold mb-4 text-foreground">
-              List NFT For Sale
-            </h2>
-            <label className="block mb-2 text-sm text-muted-foreground">
-              Price (ETH):
-            </label>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="w-full max-w-sm rounded-lg border bg-card p-8">
+            <h2 className="mb-4 text-lg font-bold text-foreground">List NFT For Sale</h2>
+            <label className="mb-2 block text-sm text-muted-foreground">Price (ETH):</label>
             <input
               type="number"
               step="0.0001"
               min="0"
               placeholder="Enter price in ETH"
-              className="w-full mb-4 p-2 border rounded text-black"
+              className="mb-4 w-full rounded border p-2 text-black"
               value={listPrice}
               onChange={(e) => setListPrice(e.target.value)}
               disabled={isListing}
@@ -871,11 +824,11 @@ export default function PromptDetailsPage() {
                 onClick={async () => {
                   setIsListing(true);
                   try {
-                    if (!signer) throw new Error("Wallet not connected.");
+                    if (!signer) throw new Error('Wallet not connected.');
                     if (!listPrice || Number(listPrice) <= 0)
-                      throw new Error("Enter a valid price.");
+                      throw new Error('Enter a valid price.');
                     const contract = new ethers.Contract(
-                      CONTRACT_ADDRESS,
+                      CONTRACT_ADDRESS!,
                       AIPromptNFTAbiFile.abi,
                       signer
                     );
@@ -885,26 +838,25 @@ export default function PromptDetailsPage() {
                     );
                     await tx.wait();
                     toast({
-                      title: "NFT Listed!",
-                      description: "Your NFT is now for sale.",
+                      title: 'NFT Listed!',
+                      description: 'Your NFT is now for sale.',
                     });
                     setShowListModal(false);
-                    setListPrice("");
+                    setListPrice('');
                     await fetchNftDetails(); // refresh UI
                     await fetchActivityEvents(); // update activity tab
                   } catch (error: any) {
                     toast({
-                      title: "List Failed",
-                      description:
-                        error?.data?.message || error?.reason || error.message,
-                      variant: "destructive",
+                      title: 'List Failed',
+                      description: error?.data?.message || error?.reason || error.message,
+                      variant: 'destructive',
                     });
                   }
                   setIsListing(false);
                 }}
                 disabled={isListing}
               >
-                {isListing ? "Listing..." : "Confirm"}
+                {isListing ? 'Listing...' : 'Confirm'}
               </Button>
               <Button
                 variant="secondary"

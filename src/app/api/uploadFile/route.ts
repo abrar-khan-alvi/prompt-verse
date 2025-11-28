@@ -12,7 +12,10 @@ export async function POST(request: NextRequest) {
 
   if (!pinataApiKey || !pinataApiSecret) {
     console.error('[API /api/uploadFile] Pinata API keys not configured.');
-    return NextResponse.json({ success: false, error: 'Pinata API keys not configured on server.' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Pinata API keys not configured on server.' },
+      { status: 500 }
+    );
   }
 
   try {
@@ -20,17 +23,24 @@ export async function POST(request: NextRequest) {
     const file = requestFormData.get('file') as File | null; // 'file' is the key used by frontend
 
     if (!file) {
-        console.log('[API /api/uploadFile] No file found in FormData.');
-        return NextResponse.json({ success: false, error: 'No file uploaded.' }, { status: 400 });
+      console.log('[API /api/uploadFile] No file found in FormData.');
+      return NextResponse.json({ success: false, error: 'No file uploaded.' }, { status: 400 });
     }
 
-    console.log('[API /api/uploadFile] File to upload:', file.name, 'Type:', file.type, 'Size:', file.size);
+    console.log(
+      '[API /api/uploadFile] File to upload:',
+      file.name,
+      'Type:',
+      file.type,
+      'Size:',
+      file.size
+    );
 
     const formData = new FormDataNode();
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     formData.append('file', fileBuffer, {
-        filename: file.name || 'untitled-file', // Use original filename or a default
-        contentType: file.type || 'application/octet-stream', // Use provided type or a default
+      filename: file.name || 'untitled-file', // Use original filename or a default
+      contentType: file.type || 'application/octet-stream', // Use provided type or a default
     });
 
     const pinataMetadata = JSON.stringify({
@@ -47,32 +57,37 @@ export async function POST(request: NextRequest) {
 
     console.log('[API /api/uploadFile] Sending file to Pinata...');
     const pinataResponse = await axios.post(
-      "https://api.pinata.cloud/pinning/pinFileToIPFS",
+      'https://api.pinata.cloud/pinning/pinFileToIPFS',
       formData,
       {
         headers: {
           ...formData.getHeaders(), // This sets the Content-Type with the correct boundary
-          'pinata_api_key': pinataApiKey,
-          'pinata_secret_api_key': pinataApiSecret,
+          pinata_api_key: pinataApiKey,
+          pinata_secret_api_key: pinataApiSecret,
         },
       }
     );
 
     console.log('[API /api/uploadFile] Pinata response:', pinataResponse.data);
     if (pinataResponse.data && pinataResponse.data.IpfsHash) {
-        return NextResponse.json({ success: true, cid: pinataResponse.data.IpfsHash });
+      return NextResponse.json({ success: true, cid: pinataResponse.data.IpfsHash });
     } else {
-        throw new Error("Pinata response did not include IpfsHash.");
+      throw new Error('Pinata response did not include IpfsHash.');
     }
-
   } catch (error: any) {
-    console.error('[API /api/uploadFile] Error during IPFS upload process:', error.response?.data || error.message, error.stack?.split('\n')[1]?.trim());
+    console.error(
+      '[API /api/uploadFile] Error during IPFS upload process:',
+      error.response?.data || error.message,
+      error.stack?.split('\n')[1]?.trim()
+    );
     let errorMessage = 'Failed to upload file to IPFS via Pinata';
-     if (axios.isAxiosError(error) && error.response?.data) {
-        const pinataError = error.response.data.error;
-        errorMessage = pinataError ? `Pinata Error: ${pinataError.reason || pinataError.details || JSON.stringify(pinataError)}` : JSON.stringify(error.response.data);
+    if (axios.isAxiosError(error) && error.response?.data) {
+      const pinataError = error.response.data.error;
+      errorMessage = pinataError
+        ? `Pinata Error: ${pinataError.reason || pinataError.details || JSON.stringify(pinataError)}`
+        : JSON.stringify(error.response.data);
     } else if (error.message) {
-        errorMessage = error.message;
+      errorMessage = error.message;
     }
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
