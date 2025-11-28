@@ -24,6 +24,7 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${inter.className} flex min-h-screen flex-col bg-background text-foreground`}
+        suppressHydrationWarning
       >
         <FavoritesProvider>
           <FollowingProvider>
