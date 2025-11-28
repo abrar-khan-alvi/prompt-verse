@@ -1,0 +1,44 @@
+npm ERR! code ERESOLVE
+npm ERR! ERESOLVE could not resolve
+npm ERR! 
+npm ERR! While resolving: react-day-picker@8.10.1
+npm ERR! Found: react@19.1.0
+npm ERR! node_modules/react
+npm ERR!   react@"^19.0.0" from the root project
+npm ERR!   peer react@">=16.8.0" from @floating-ui/react-dom@2.1.2
+npm ERR!   node_modules/@floating-ui/react-dom
+npm ERR!     @floating-ui/react-dom@"^2.0.0" from @radix-ui/react-popper@1.2.7
+npm ERR!     node_modules/@radix-ui/react-popper
+npm ERR!       @radix-ui/react-popper@"1.2.7" from @radix-ui/react-menu@2.1.15
+npm ERR!       node_modules/@radix-ui/react-menu
+npm ERR!         @radix-ui/react-menu@"2.1.15" from @radix-ui/react-dropdown-menu@2.1.15
+npm ERR!         node_modules/@radix-ui/react-dropdown-menu
+npm ERR!       2 more (@radix-ui/react-popover, @radix-ui/react-tooltip)
+npm ERR!     @floating-ui/react-dom@"^2.0.0" from @radix-ui/react-popper@1.2.8
+npm ERR!     node_modules/@radix-ui/react-select/node_modules/@radix-ui/react-popper
+npm ERR!       @radix-ui/react-popper@"1.2.8" from @radix-ui/react-select@2.2.6
+npm ERR!       node_modules/@radix-ui/react-select
+npm ERR!         @radix-ui/react-select@"^2.2.6" from the root project
+npm ERR!   60 more (@radix-ui/react-accordion, @radix-ui/react-arrow, ...)
+npm ERR! 
+npm ERR! Could not resolve dependency:
+npm ERR! peer react@"^16.8.0 || ^17.0.0 || ^18.0.0" from react-day-picker@8.10.1
+npm ERR! node_modules/react-day-picker
+npm ERR!   react-day-picker@"^8.10.1" from the root project
+npm ERR! 
+npm ERR! Conflicting peer dependency: react@18.3.1
+npm ERR! node_modules/react
+npm ERR!   peer react@"^16.8.0 || ^17.0.0 || ^18.0.0" from react-day-picker@8.10.1
+npm ERR!   node_modules/react-day-picker
+npm ERR!     react-day-picker@"^8.10.1" from the root project
+npm ERR! 
+npm ERR! Fix the upstream dependency conflict, or retry
+npm ERR! this command with --force or --legacy-peer-deps
+npm ERR! to accept an incorrect (and potentially broken) dependency resolution.
+npm ERR! 
+npm ERR! 
+npm ERR! For a full report see:
+npm ERR! C:\Users\abrar\AppData\Local\npm-cache\_logs\2025-11-28T21_34_14_419Z-eresolve-report.txt
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     C:\Users\abrar\AppData\Local\npm-cache\_logs\2025-11-28T21_34_14_419Z-debug-0.log

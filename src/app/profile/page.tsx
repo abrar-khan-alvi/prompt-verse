@@ -368,7 +368,7 @@ export default function ProfilePage() {
             <TabsContent value="owned">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {ownedPrompts.length > 0 ? (
-                  ownedPrompts.map((prompt) => <PromptCard key={prompt.id} {...prompt} />)
+                  ownedPrompts.map((prompt) => <PromptCard key={prompt.id} {...prompt} isOwner={true} />)
                 ) : (
                   <div className="col-span-full py-10 text-center">
                     <p className="mb-4 text-muted-foreground">You don't own any prompts yet.</p>

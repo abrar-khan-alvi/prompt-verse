@@ -106,8 +106,33 @@ export const buyNFT = async (tokenId: string, priceEth: string) => {
     await tx.wait();
 
     return { success: true, transactionHash: tx.hash };
+    return { success: true, transactionHash: tx.hash };
   } catch (error) {
     console.error('Error buying NFT:', error);
+    throw error;
+  }
+};
+
+// Burn NFT (Transfer to Dead Address)
+export const burnNFT = async (tokenId: string) => {
+  try {
+    const contract = await getContract(true);
+    const deadAddress = '0x000000000000000000000000000000000000dEaD';
+
+    // Use safeTransferFrom to send to dead address
+    // Note: safeTransferFrom is overloaded, so we need to specify the signature or use the method explicitly if using ethers v6
+    // In ethers v6, we can usually call it directly if the overload is handled, but let's be safe.
+    // The ABI has: safeTransferFrom(from, to, tokenId) and safeTransferFrom(from, to, tokenId, data)
+
+    const ownerAddress = await getCurrentAccount();
+
+    // We use the 3-argument version: safeTransferFrom(from, to, tokenId)
+    const tx = await contract['safeTransferFrom(address,address,uint256)'](ownerAddress, deadAddress, tokenId);
+    await tx.wait();
+
+    return { success: true, transactionHash: tx.hash };
+  } catch (error) {
+    console.error('Error burning NFT:', error);
     throw error;
   }
 };
@@ -213,6 +238,7 @@ export default {
   mintPromptNFT,
   listNFTForSale,
   buyNFT,
+  burnNFT,
   getNFTDetails,
   getUserNFTs,
   getMarketplaceNFTs,

@@ -5,6 +5,11 @@ import { Button } from '@/components/ui/button';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { FollowButton } from '@/components/FollowButton';
 
+import { useState } from 'react';
+import { burnNFT } from '@/utils/contractInteraction';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2, Trash2 } from 'lucide-react';
+
 export interface PromptCardProps {
   id: string;
   title: string;
@@ -15,11 +20,41 @@ export interface PromptCardProps {
     address: string;
     name?: string;
   };
+  isOwner?: boolean;
 }
 
-const PromptCard = ({ id, title, preview, image, price, creator }: PromptCardProps) => {
+const PromptCard = ({ id, title, preview, image, price, creator, isOwner }: PromptCardProps) => {
+  const { toast } = useToast();
+  const [isBurning, setIsBurning] = useState(false);
+
   const formatAddress = (address: string) => {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
+
+  const handleBurn = async () => {
+    if (!confirm('Are you sure you want to burn this NFT? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsBurning(true);
+    try {
+      await burnNFT(id);
+      toast({
+        title: 'NFT Burned',
+        description: 'The NFT has been successfully burned.',
+      });
+      // Optional: Refresh page or callback to remove item from list
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to burn NFT:', error);
+      toast({
+        title: 'Burn Failed',
+        description: 'Failed to burn the NFT. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsBurning(false);
+    }
   };
 
   return (
@@ -60,11 +95,24 @@ const PromptCard = ({ id, title, preview, image, price, creator }: PromptCardPro
           <span className="ml-2 font-semibold">{price} ETH</span>
         </div>
 
-        <Link href={`/prompt/${id}`}>
-          <Button variant="secondary" size="sm">
-            View Details
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          {isOwner && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBurn}
+              disabled={isBurning}
+              className="px-2"
+            >
+              {isBurning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+            </Button>
+          )}
+          <Link href={`/prompt/${id}`}>
+            <Button variant="secondary" size="sm">
+              View Details
+            </Button>
+          </Link>
+        </div>
       </CardFooter>
     </Card>
   );

@@ -92,7 +92,10 @@ export default function Navbar() {
   return (
     <nav className="fixed left-0 right-0 top-0 z-50 w-full border-b border-border bg-background/80 px-6 py-4 backdrop-blur-lg">
       <div className="container mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="relative h-8 w-8 overflow-hidden rounded-full">
+            <img src="/logo.png" alt="PromptVerse Logo" className="h-full w-full object-cover" />
+          </div>
           <h1 className="gradient-text text-2xl font-bold">PromptVerse</h1>
         </Link>
 
