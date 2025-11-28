@@ -17,24 +17,22 @@ interface EnvConfig {
  * @throws Error if any required environment variable is missing
  */
 function validateEnv(): EnvConfig {
-  const requiredEnvVars = [
-    'NEXT_PUBLIC_CONTRACT_ADDRESS',
-    'NEXT_PUBLIC_PINATA_JWT',
-    'NEXT_PUBLIC_PINATA_GATEWAY',
-  ] as const;
-
   const missingVars: string[] = [];
 
-  requiredEnvVars.forEach((envVar) => {
-    if (!process.env[envVar]) {
-      missingVars.push(envVar);
-    }
-  });
+  if (!process.env.NEXT_PUBLIC_CONTRACT_ADDRESS) {
+    missingVars.push('NEXT_PUBLIC_CONTRACT_ADDRESS');
+  }
+  if (!process.env.NEXT_PUBLIC_PINATA_JWT) {
+    missingVars.push('NEXT_PUBLIC_PINATA_JWT');
+  }
+  if (!process.env.NEXT_PUBLIC_PINATA_GATEWAY) {
+    missingVars.push('NEXT_PUBLIC_PINATA_GATEWAY');
+  }
 
   if (missingVars.length > 0) {
     throw new Error(
       `Missing required environment variables:\n${missingVars.join('\n')}\n\n` +
-        `Please check your .env.local file and ensure all required variables are set.`
+      `Please check your .env.local file and ensure all required variables are set.`
     );
   }
 
